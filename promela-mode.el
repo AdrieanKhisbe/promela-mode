@@ -46,6 +46,10 @@
 ;;   - NTEmacs (FSF): 20.[67]
 ;; That is not to say there are no bugs specific to one of those versions :-)
 
+;; §note: adapt to emacs 24. Retrocopmatibity have not being test, but
+;; according changes made, nothing might have been broken
+;;
+
 ;; Please send any comments, bugs, patches or other requests to
 ;; Eric Engstrom at engstrom@htc.honeywell.com
 
@@ -63,8 +67,8 @@
 ;;; -------------------------------------------------------------------------
 ;;; Code:
 
-;; NOTE: same as CVS revision:
-(defconst promela-mode-version "$Revision: 1.11 $"
+;; NOTE: folowing 1.11 cvs version
+(defconst promela-mode-version "Revision: 1.111"
   "Promela-mode version number.")
 
 ;; -------------------------------------------------------------------------
@@ -338,16 +342,25 @@ If (match-beginning 2) is non-nil, the item is followed by a `value'."
     nil						  ;; mods to syntax table (see below)
     nil						  ;; syntax-begin
     (font-lock-mark-block-function . mark-defun))
-)
+  )
 
 ;; "install" the font-lock-defaults based upon version of emacs we have
 (cond (promela-xemacsp
        (put 'promela-mode 'font-lock-defaults promela-font-lock-defaults))
-      ((not (assq 'promela-mode font-lock-defaults-alist))
-       (setq font-lock-defaults-alist
-             (cons
-              (cons 'promela-mode promela-font-lock-defaults)
-              font-lock-defaults-alist))))
+      (
+       (if  (>= emacs-major-version 24)
+	   (not (assq 'promela-mode font-lock-defaults))
+	 (setq font-lock-defaults
+	       (cons
+		(cons 'promela-mode promela-font-lock-defaults)
+		font-lock-defaults))
+	 (not (assq 'promela-mode font-lock-defaults-alist))
+	 (setq font-lock-defaults-alist
+	       (cons
+		(cons 'promela-mode promela-font-lock-defaults)
+		font-lock-defaults-alist))
+
+	 )))
 
 
 ;; -------------------------------------------------------------------------
@@ -594,27 +607,56 @@ indents the current line before running a regular newline-and-indent."
       (expand-abbrev))
   (newline-and-indent))
 
-(defun promela-insert-and-indent ()
-  "Insert the last character typed and re-indent the current line"
-  (interactive)
-  (insert last-command-char)
-  (save-excursion (promela-indent-command)))
+(if (<= emacs-major-version 20)
+    (progn
+      (defun promela-insert-and-indent ()
+	"Insert the last character typed and re-indent the current line"
+	(interactive)
+	(insert last-command-char)
+	(save-excursion (promela-indent-command)))
 
-(defun promela-open-delimiter ()
-  "Inserts the open and matching close delimiters, indenting as appropriate."
-  (interactive)
-  (insert last-command-char)
-  (if (and promela-auto-match-delimiter (not (promela-inside-comment-p)))
-      (save-excursion
-        (insert (cdr (assq last-command-char promela-matching-delimiter-alist)))
-        (promela-indent-command))))
+      (defun promela-open-delimiter ()
+	"Inserts the open and matching close delimiters, indenting as appropriate."
+	(interactive)
+	(insert last-command-char)
+	(if (and promela-auto-match-delimiter (not (promela-inside-comment-p)))
+	    (save-excursion
+	      (insert (cdr (assq last-command-char promela-matching-delimiter-alist)))
+	      (promela-indent-command))))
 
-(defun promela-close-delimiter ()
-  "Inserts and indents a close delimiter."
-  (interactive)
-  (insert last-command-char)
-  (if (not (promela-inside-comment-p))
-      (save-excursion (promela-indent-command))))
+      (defun promela-close-delimiter ()
+	"Inserts and indents a close delimiter."
+	(interactive)
+	(insert last-command-char)
+	(if (not (promela-inside-comment-p))
+	    (save-excursion (promela-indent-command))))
+
+      )
+  (progn ;; for emacs 20<=  (i know its verbose...)
+    (defun promela-insert-and-indent ()
+      "Insert the last character typed and re-indent the current line"
+      (interactive)
+      (insert last-command-event)
+      (save-excursion (promela-indent-command)))
+
+    (defun promela-open-delimiter ()
+      "Inserts the open and matching close delimiters, indenting as appropriate."
+      (interactive)
+      (insert last-command-event)
+      (if (and promela-auto-match-delimiter (not (promela-inside-comment-p)))
+	  (save-excursion
+	    (insert (cdr (assq last-command-event promela-matching-delimiter-alist)))
+	    (promela-indent-command))))
+
+    (defun promela-close-delimiter ()
+      "Inserts and indents a close delimiter."
+      (interactive)
+      (insert last-command-event)
+      (if (not (promela-inside-comment-p))
+	  (save-excursion (promela-indent-command))))
+
+    )
+  )
 
 (defun promela-toggle-auto-match-delimiter ()
   "Toggle auto-insertion of parens and other delimiters.
