@@ -347,20 +347,18 @@ If (match-beginning 2) is non-nil, the item is followed by a `value'."
 ;; "install" the font-lock-defaults based upon version of emacs we have
 (cond (promela-xemacsp
        (put 'promela-mode 'font-lock-defaults promela-font-lock-defaults))
-      (
-       (if  (>= emacs-major-version 24)
-	   (not (assq 'promela-mode font-lock-defaults))
-	 (setq font-lock-defaults
-	       (cons
-		(cons 'promela-mode promela-font-lock-defaults)
-		font-lock-defaults))
-	 (not (assq 'promela-mode font-lock-defaults-alist))
-	 (setq font-lock-defaults-alist
-	       (cons
-		(cons 'promela-mode promela-font-lock-defaults)
-		font-lock-defaults-alist))
+      ;; §check
+      ((and (>= emacs-major-version 24) (not (assq 'promela-mode font-lock-defaults)))
+       (setq font-lock-defaults
+	   (cons
+	    (cons 'promela-mode promela-font-lock-defaults)
+	    font-lock-defaults)))
 
-	 )))
+      ((and (< emacs-major-version 24) (not (assq 'promela-mode font-lock-defaults-alist)))
+       (setq font-lock-defaults-alist
+	     (cons
+	      (cons 'promela-mode promela-font-lock-defaults)
+	      font-lock-defaults-alist))))
 
 
 ;; -------------------------------------------------------------------------
